@@ -1,4 +1,5 @@
 # epispot/cli
+![epi-cli logo](https://i.ibb.co/phSKJQ4/epi-cli.png)
 
 The epispot CLI (aka `epi-cli`). Presenting:
  - A user-friendly interface for interacting with pre-built models

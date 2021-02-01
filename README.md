@@ -1,3 +1,10 @@
-# epicli
+# epispot/cli
 
-The epispot cli.
+The epispot CLI. Presenting:
+ - A user-friendly interface for interacting with pre-built models
+ - A client for fetching **live** coronavirus data
+    - Make predictions instantly
+    - Get graphs, visulizations, and .csv files
+ - The power to compile models in **1 line**
+ 
+ Deployment Status: **in-progress**

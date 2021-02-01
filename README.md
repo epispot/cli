@@ -1,6 +1,6 @@
 # epispot/cli
 
-The epispot CLI. Presenting:
+The epispot CLI (aka `epi-cli`). Presenting:
  - A user-friendly interface for interacting with pre-built models
  - A client for fetching **live** coronavirus data
     - Make predictions instantly

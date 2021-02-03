@@ -109,8 +109,59 @@ def find_country(string):
     return max_matching[0]
 
 
+def find_only_countries(string):
+    """
+    Finds country by abbreviation
+    For example:
+        Bra for Brazil
+        CR for Costa Rica
+    Not case-sensitive
+    Does NOT include regions or continents
+    """
+
+    country_list = open('data/list-of-countries.csv').readlines()
+    matches = []
+
+    for country in country_list[:223]:
+
+        country_words = country.split(' ')
+
+        if len(country_words) > 1:
+
+            country_abbr = []
+            for word in country_words:
+                country_abbr.append(list(word)[0])
+
+            country_abbr = ''.join(country_abbr)
+            if country_abbr.lower() == string.lower():
+                return country.replace('\n', '')
+
+        else:
+
+            country_letters = list(country.replace('\n', ''))
+            string_letters = list(string)
+            num_matches = 0
+
+            for letter in range(0, min(len(country_letters), len(string_letters))):
+
+                if country_letters[letter].lower() == string_letters[letter].lower():
+                    num_matches += 1
+                else:
+                    break
+
+            if num_matches != 0:
+                matches.append((country.replace('\n', ''), num_matches))
+
+    max_matching = ('[Country]', 0)
+    for match in matches:
+        if match[1] > max_matching[1]:
+            max_matching = match
+
+    return max_matching[0]
+
+
 @cli.command()
-@click.option('--c', 'country', default='world', help='Get cases from a specific country/region or even a cruise ship.')
+@click.option('--c', 'country', default='world', help='Get cases from a specific country/region or even a cruise ship')
 def cases(country):
     """
     Get case data for a specific country or continent
@@ -306,6 +357,82 @@ def cases(country):
                 click.echo('    ' + guess + ' is located in ' + case_info['Continent'])
             if case_info['LastUpdated'] != '':
                 click.echo('    Data for ' + guess + ' was last updated as of ' + case_info['LastUpdated'])
+
+
+def get_total(country):
+    """
+    Runs through all available functions and metrics to return total cases
+    Does not print to terminal
+    """
+
+    regions = open('data/regions.csv').readlines()
+    regions_list = [line.split(',')[0] for line in regions]
+
+    if country != 'world':
+
+        case_info = covid.get_country_cases(country=country)
+
+        if case_info is None:
+            guess = find_only_countries(country)
+            case_info = covid.get_country_cases(country=guess)
+
+        case_list = [case_info['TotalCases'], case_info['TotalDeaths'], case_info['TotalRecovered'],
+                     case_info['ActiveCases'], case_info['Critical'],
+                     case_info['TotalTests']]
+
+    if country == 'world':
+        case_info = covid.get_global_cases()
+        case_list = [case_info['TotalCases'], case_info['TotalDeaths'], case_info['TotalRecovered'],
+                     case_info['ActiveCases'], case_info['Critical'],
+                     case_info['TotalTests']]
+
+    for k in range(len(case_list)):
+        if case_list[k] == '':
+            case_list[k] = '0'
+
+    return case_list
+
+
+@cli.command()
+@click.option('--c', 'countries', help='String of comma-separated country names or abbreviations to compare')
+def compare(countries):
+    """
+    Compare multiple countries or regions
+    Must be in a comma-separated string, spaces unnecessary but valid
+    DO NOT use a region or continent
+    """
+
+    countries = countries.replace(' ', '').split(',')
+
+    country_cases = []
+    for country in countries:
+        country_cases.append((country, get_total(country)))
+
+    x = [i[0] for i in country_cases]
+    y = [i[1] for i in country_cases]
+    max_y = 0
+
+    for country in range(len(y)):
+        for stat in range(len(y[country])):
+
+            y[country][stat] = int(y[country][stat].replace(',', ''))
+            if y[country][stat] > max_y:
+                max_y = y[country][stat]
+
+    ind = np.arange(len(countries))
+    width = 1 / (4 * len(countries))
+
+    plt.bar(ind, [i[0] for i in y], label='Total Cases', width=width, color='#44aa44')
+    plt.bar(ind + width, [i[2] for i in y], label='Total Recovered', width=width, color='#880088')
+    plt.bar(ind + 2 * width, [i[3] for i in y], label='Estimated Active Cases', width=width, color='#00aaff')
+    plt.bar(ind + 3 * width, [i[1] for i in y], label='Total Deaths', width=width, color='#ff6600')
+    plt.bar(ind + 4 * width, [i[4] for i in y], label='Critical Condition', width=width, color='#ff8800')
+    plt.xlabel('Country')
+    plt.ylabel('Case Count')
+
+    plt.xticks(ind + 4 * width / 2, x)
+    plt.legend(loc='best')
+    plt.show()
 
 
 if __name__ == '__main__':
